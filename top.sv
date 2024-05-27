@@ -12,16 +12,16 @@ package pkg_lib;
         /*DATA PROCESS*/ ADC,  ADD,  ADR, AND, BIC, CMP,
         /*SHIFT*/        ASR,  LSL,  LSR,
         /*PACK_UNPACK*/  SXTB, SXTH, UXTB
-    } instr_t;
+    } instruction_t;
 
-    class instr_item extends uvm_object;
+    class instruction_item extends uvm_object;
 
-        rand instr_group_t instr_group;
-        rand instr_t       instr;
+        rand instr_group_t instruction_group;
+        rand instruction_t instruction;
 
-        instr_t data_proc_q[$] = {ADC,  ADD,  ADR, AND, BIC, CMP};
-        instr_t shift_q[$]     = {ASR, LSL, LSR};
-        instr_t pack_q[$]      = {SXTB, SXTH, UXTB};
+        instruction_t data_proc_q[$] = {ADC,  ADD,  ADR, AND, BIC, CMP};
+        instruction_t shift_q[$]     = {ASR, LSL, LSR};
+        instruction_t pack_q[$]      = {SXTB, SXTH, UXTB};
 
         static int data_proc_cnt;
         static int shift_cnt;
@@ -29,37 +29,37 @@ package pkg_lib;
         static int total_cnt;
 
         constraint inster_c {
-            
+
             // Choose instruction from group
-            if (instr_group==DATA_PROC) {
-                instr inside {data_proc_q};
+            if (instruction_group==DATA_PROC) {
+                instruction inside {data_proc_q};
             }
-            else if (instr_group==SHIFT) {
-                instr inside {shift_q};
+            else if (instruction_group==SHIFT) {
+                instruction inside {shift_q};
             }
             else {
-                instr inside {pack_q};
+                instruction inside {pack_q};
             }
-           
+
             // Apply variable ordering
-            solve instr_group before instr;
+            solve instruction_group before instruction;
         }
 
-        `uvm_object_utils_begin(instr_item)
-            `uvm_field_enum(instr_group_t, instr_group, UVM_DEFAULT)
-            `uvm_field_enum(instr_t, instr, UVM_DEFAULT)
+        `uvm_object_utils_begin(instruction_item)
+            `uvm_field_enum(instr_group_t, instruction_group, UVM_DEFAULT)
+            `uvm_field_enum(instruction_t, instruction, UVM_DEFAULT)
         `uvm_object_utils_end
 
-        function new (string name="instr_item");
+        function new (string name="instruction_item");
             super.new(name);
         endfunction
 
         function void post_randomize();
-            if (instr inside {data_proc_q}) begin
+            if (instruction inside {data_proc_q}) begin
                 data_proc_cnt++;
                 total_cnt++;
             end
-            else if (instr inside {shift_q}) begin
+            else if (instruction inside {shift_q}) begin
                 shift_cnt++;
                 total_cnt++;
             end
@@ -70,14 +70,14 @@ package pkg_lib;
         endfunction : post_randomize
 
         function string convert2string ();
-            return $sformatf("For item: %s, inster_group: %s, instr: %s",get_name(), instr_group.name(), instr.name());
+            return $sformatf("For item: %s, inster_group: %s, instruction: %s",get_name(), instruction_group.name(), instruction.name());
         endfunction
 
     endclass
 
     class solve_before_test extends uvm_test;
 
-        rand instr_item instr;
+        rand instruction_item instruction;
 
         `uvm_component_utils(solve_before_test)
 
@@ -88,17 +88,20 @@ package pkg_lib;
         task run_phase (uvm_phase phase);
             super.run_phase(phase);
             for(int idx=0; idx<1200; idx++) begin
-                instr=instr_item::type_id::create($sformatf("instr[%0d]",idx),this);
-                `sv_rand_check(instr.randomize());
+                instruction=instruction_item::type_id::create($sformatf("instruction[%0d]",idx),this);
+                `sv_rand_check(instruction.randomize());
             end
         endtask
 
         function void final_phase (uvm_phase phase);
             string s="\n";
             $sformat(s,"%s\n**********************************************************************************\n",s);
-            $sformat(s,"%s Total number of data process instructions: %0d, percent from total: %9.3f\n",s, instr.data_proc_cnt, 100 * instr.data_proc_cnt/instr.total_cnt);
-            $sformat(s,"%s Total number of shift        instructions: %0d, percent from total: %9.3f\n",s, instr.shift_cnt, 100 * instr.shift_cnt/instr.total_cnt);
-            $sformat(s,"%s Total number of pack unpack  instructions: %0d, percent from total: %9.3f\n",s, instr.pack_cnt, 100 * instr.pack_cnt/instr.total_cnt);
+            $sformat(s,"%s Total number of data process instructions: %0d, percent from total: %9.3f\n",s,
+                instruction_item::data_proc_cnt, 100 * instruction_item::data_proc_cnt/instruction_item::total_cnt);
+            $sformat(s,"%s Total number of shift        instructions: %0d, percent from total: %9.3f\n",s,
+                instruction_item::shift_cnt, 100 * instruction_item::shift_cnt/instruction_item::total_cnt);
+            $sformat(s,"%s Total number of pack unpack  instructions: %0d, percent from total: %9.3f\n",s,
+                instruction_item::pack_cnt, 100 * instruction_item::pack_cnt/instruction_item::total_cnt);
             $sformat(s,"%s***********************************************************************************\n",s);
             `info(s)
         endfunction
